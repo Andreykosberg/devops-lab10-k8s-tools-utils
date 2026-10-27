@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+# Прод держим на 3 репликах (в методичке - 5, но урезали ради памяти
+# учебной ВМ с minikube, которой и так тесно на 3.8Gi).
+replicas:
+  - name: web
+    count: 3
+
+configMapGenerator:
+  - name: flask-env-config
+    behavior: merge
+    literals:
+      - APP_ENV=prod
+      - GREETING_MESSAGE=Hello from Kustomize PROD
+      - APP_COLOR=red
+
+# LoadBalancer-порт prod-окружения: 8003 (dev занимает 8002) - оба
+# оверлея применены одновременно в разных namespace'ах и видны через
+# один и тот же `minikube tunnel` на разных портах.
+patches:
+  - target:
+      kind: Service
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/ports/0/port
+        value: 8003
+  # Прод-специфика, которой нет в dev: явные requests/limits на web,
+  # чтобы показать, что оверлеи могут патчить не только реплики/порты,
+  # но и ресурсы контейнера.
+  - target:
+      kind: Deployment
+      name: web
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "50m"
+            memory: "32Mi"
+          limits:
+            cpu: "200m"
+            memory: "96Mi"

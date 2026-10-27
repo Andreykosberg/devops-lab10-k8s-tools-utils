@@ -1,0 +1,36 @@
+apiVersion: v2
+name: promgra
+description: >-
+  Helm-чарт мониторингового стека (Prometheus + Grafana + Blackbox Exporter),
+  сгенерированный из docker-compose проекта `devops-lab08-docker-compose/monitoring`
+  командой `kompose convert --chart` и затем доработанный руками, см. п.2
+  README лабораторной 10.
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - compose
+  - prometheus
+  - grafana
+  - blackbox-exporter
+
+# ---------------------------------------------------------------------------
+# Что было сгенерировано kompose "как есть" (`kompose convert --chart -f compose.yaml`):
+#   templates/{grafana,prometheus,blackbox}-deployment.yaml
+#   templates/{grafana,prometheus,blackbox}-service.yaml
+#   templates/prometheus-cm0-configmap.yaml      (из prometheus/prometheus.yml)
+#   templates/{prom-data,grafana-data}-persistentvolumeclaim.yaml
+#   values.yaml не создаётся вообще — kompose просто подставляет литералы.
+#
+# Что было исправлено руками (аналогично лекционным слайдам 25-34):
+#   1. Chart переименован: name: compose -> name: promgra, папка compose/ -> promgra-chart/.
+#   2. grafana-service.yaml: добавлен type: LoadBalancer и externalIPs: [10.0.2.15],
+#      чтобы Grafana была доступна снаружи ВМ через уже работающий `minikube tunnel`
+#      (аналогично лекционному слайду 25), порт параметризован через values.yaml.
+#   3. Добавлен values.yaml с EXTERNAL_IP, EXTERNAL_PORT, GF_ADMIN_PASSWORD -
+#      пароль админа Grafana и внешний порт теперь настраиваются через
+#      `helm install --set` / `helm upgrade --set` (слайды 31-34), а не вшиты в манифест.
+#   4. Во все 3 Deployment добавлен imagePullPolicy: Never, т.к. образы
+#      grafana/grafana, prom/prometheus, prom/blackbox-exporter заранее
+#      загружены в minikube командой `minikube image load` (без них будет
+#      ImagePullBackOff, см. слайд 29 - мы просто предотвращаем проблему заранее).
+# ---------------------------------------------------------------------------

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: flask:v3
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          # Переменные окружения больше НЕ зашиты в манифест (Task 2):
+          # все три приходят из ConfigMap'а flask-env-config, который
+          # генерируется configMapGenerator'ом и переопределяется
+          # (behavior: merge) в оверлеях dev/prod - разные значения
+          # без пересборки образа и без правки base-манифестов.
+          envFrom:
+            - configMapRef:
+                name: flask-env-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20

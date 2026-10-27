@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --chart -f compose.yaml
+    kompose.version: 1.36.0 (ae2a39403)
+  labels:
+    io.kompose.service: grafana
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: grafana
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --chart -f compose.yaml
+        kompose.version: 1.36.0 (ae2a39403)
+      labels:
+        io.kompose.service: grafana
+    spec:
+      containers:
+        - env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+            # Пароль администратора Grafana теперь параметризован values.yaml
+            # (ручная правка - у kompose всегда был бы литерал "admin").
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: {{ .Values.GF_ADMIN_PASSWORD | quote }}
+            - name: GF_SECURITY_ADMIN_USER
+              value: admin
+          image: {{ .Values.images.grafana }}
+          # Образ уже загружен в minikube через `minikube image load`, тянуть
+          # из реестра не нужно (и там его просто нет под таким тегом).
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          name: grafana
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-data
+      restartPolicy: Always
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data

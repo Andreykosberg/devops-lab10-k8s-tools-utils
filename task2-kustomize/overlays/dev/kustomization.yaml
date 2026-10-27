@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dev
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+replicas:
+  - name: web
+    count: 1
+
+configMapGenerator:
+  - name: flask-env-config
+    behavior: merge
+    literals:
+      - APP_ENV=dev
+      - GREETING_MESSAGE=Hello from Kustomize DEV
+      - APP_COLOR=green
+
+# LoadBalancer-порт dev-окружения: 8002 (отличается от prod, чтобы оба
+# оверлея можно было держать развёрнутыми одновременно и проверять
+# через один и тот же `minikube tunnel`, как в Lab 9).
+patches:
+  - target:
+      kind: Service
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/ports/0/port
+        value: 8002

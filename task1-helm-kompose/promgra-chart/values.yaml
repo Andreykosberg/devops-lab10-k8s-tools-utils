@@ -1,0 +1,22 @@
+# Параметры стенда, вынесенные из манифестов руками (kompose values.yaml не
+# генерирует). Используются в templates/grafana-service.yaml и
+# templates/grafana-deployment.yaml через {{ .Values.* }}.
+
+# Внешний адрес, на котором Grafana торчит наружу ВМ через `minikube tunnel
+# --bind-address 10.0.2.15` (тот же тоннель, что и у Task 2 / предыдущих лаб).
+EXTERNAL_IP: "10.0.2.15"
+
+# Порт LoadBalancer-сервиса Grafana снаружи. Меняется через
+# `helm upgrade --set EXTERNAL_PORT=...` для демонстрации обновления релиза.
+EXTERNAL_PORT: 3000
+
+# Пароль администратора Grafana (GF_SECURITY_ADMIN_PASSWORD). По умолчанию
+# "admin", как и было в исходном compose.yaml; продемонстрируем смену через
+# --set при helm upgrade.
+GF_ADMIN_PASSWORD: "admin"
+
+images:
+  grafana: grafana/grafana
+  prometheus: prom/prometheus
+  blackbox: prom/blackbox-exporter
+  pullPolicy: Never
